@@ -162,13 +162,13 @@ static void VS_CC filterCreate(const VSMap *in, VSMap *out, void *userData, VSCo
     data = malloc(sizeof(d));
     *data = d;
 
-    vsapi->createFilter(in, out, "Filter", filterInit, filterGetFrame, filterFree, fmParallel, 0, data, core);
+    vsapi->createFilter(in, out, "Lanczos", filterInit, filterGetFrame, filterFree, fmParallel, 0, data, core);
 }
 
 //////////////////////////////////////////
 // Init
 
 VS_EXTERNAL_API(void) VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin *plugin) {
-    configFunc("com.example.filter", "filter", "VapourSynth Filter Skeleton", VAPOURSYNTH_API_VERSION, 1, plugin);
-    registerFunc("Filter", "clip:clip;w:int;h:int;radius:float:opt;blur:float:opt;antiring:int:opt", filterCreate, 0, plugin);
+    configFunc("com.ewa.resampling", "ewa", "VapourSynth EWA resampling", VAPOURSYNTH_API_VERSION, 1, plugin);
+    registerFunc("Lanczos", "clip:clip;w:int;h:int;radius:float:opt;blur:float:opt;antiring:int:opt", filterCreate, 0, plugin);
 }
