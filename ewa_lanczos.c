@@ -81,7 +81,7 @@ static const VSFrameRef *VS_CC filterGetFrame(int n, int activationReason, void 
                     // reverse pixel mapping
                     double rpm_x = (x+0.5) * (iw)/(ow);
                     double rpm_y = (y+0.5) * (ih)/(oh);
-
+                    // who cares about border handling anyway ヽ( ﾟヮ・)ノ 
                     int window_x_lower = (int) MAX(ceil(rpm_x - d->radius + 0.5) - 1, 0.0);
                     int window_x_upper = (int) MIN(floor(rpm_x + d->radius + 0.5) - 1, iw-1);
                     int window_y_lower = (int) MAX(ceil(rpm_y - d->radius + 0.5) - 1, 0.0);
@@ -91,7 +91,7 @@ static const VSFrameRef *VS_CC filterGetFrame(int n, int activationReason, void 
                     for (int ewa_y = window_y_lower; ewa_y <= window_y_upper; ewa_y++) {
                         for (int ewa_x = window_x_lower; ewa_x <= window_x_upper; ewa_x++) {
 
-                            double distance = pow(rpm_x - (ewa_x+0.5), 2.0) + pow(rpm_y - (ewa_y+0.5), 2.0); // weighting table was computed with square root so we omit it here
+                            double distance = pow(rpm_x - (ewa_x+0.5), 2.0) + pow(rpm_y - (ewa_y+0.5), 2.0);
                             if (distance > radius2)
                                 continue;
                             double weight = d->lut[(int) round((d->samples-1) * distance/radius2)];
@@ -100,7 +100,7 @@ static const VSFrameRef *VS_CC filterGetFrame(int n, int activationReason, void 
                             pixel += weight * src_value;
                         }
                     }
-                    pixel = MAX(MIN(pixel/normalizer, (1 << d->vi->format->bitsPerSample) - 1), 0);
+                    pixel = MAX(MIN(pixel/normalizer, (1 << d->vi->format->bitsPerSample) - 1), 0); // what is limited range ヽ( ﾟヮ・)ノ 
 
                     dstp[x + y * dst_stride] = (uint16_t) pixel;
                 }
@@ -130,10 +130,12 @@ static void VS_CC filterCreate(const VSMap *in, VSMap *out, void *userData, VSCo
     d.vi = vsapi->getVideoInfo(d.node);
     d.w = (int) vsapi->propGetInt(in, "w", 0, &err);
     d.h = (int) vsapi->propGetInt(in, "h", 0, &err);
+    
+    //probably add an RGB check because subpixel shifting is :effort:
 
     d.antiring = (int) vsapi->propGetInt(in, "antiring", 0, &err);
     if (err)
-        d.antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting :|
+        d.antiring = 0; // will implement once I learn how to sort arrays in C without segfaulting ヽ( ﾟヮ・)ノ 
 
     d.radius = vsapi->propGetFloat(in, "radius", 0, &err);
     if (err)
@@ -144,7 +146,7 @@ static void VS_CC filterCreate(const VSMap *in, VSMap *out, void *userData, VSCo
         d.blur = 0.9812505644269356;
 
     if (d.w / d.vi->width < 1 || d.h / d.vi->height < 1) {
-        double scale = MIN((double) d.vi->width / d.w, (double) d.vi->height / d.h );
+        double scale = MIN((double) d.vi->width / d.w, (double) d.vi->height / d.h ); // an ellipse would be :effort:
         d.radius = d.radius * scale;
         d.blur = d.blur * scale;
     }
@@ -153,7 +155,7 @@ static void VS_CC filterCreate(const VSMap *in, VSMap *out, void *userData, VSCo
 
     double* lut = (double*) malloc(sizeof(double)*d.samples);
     for (int i = 0; i < d.samples; ++i) {
-        double filter = sample(jinc, d.radius * sqrt((double) i/(d.samples-1)), d.blur, d.radius);
+        double filter = sample(jinc, d.radius * sqrt((double) i/(d.samples-1)), d.blur, d.radius); // saving the sqrt during filtering
         double window = sample(jinc, JINC_ZERO * sqrt((double) i/(d.samples-1)), 1, d.radius);
         lut[i] = filter * window ;
     }
